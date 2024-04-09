@@ -22,7 +22,8 @@ class IntensityTransformation:
         
     def linear_strerching(self, img):
         img = self.load_img(img) if isinstance(img, str) else img
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         min_intensity = img.min()
         max_intensity = img.max()
         img = (img - min_intensity) / (max_intensity - min_intensity) * 255
@@ -30,7 +31,8 @@ class IntensityTransformation:
     
     def histogram_equalization(self, img):
         img = self.load_img(img) if isinstance(img, str) else img
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        if len(img.shape) > 2:
+            img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img = cv2.equalizeHist(img)
         return img
 
