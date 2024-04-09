@@ -5,6 +5,8 @@
 - [ ] April 4 - April 10
     - Machine Learning
         - [ ] Try different filters for seperating bones
+            - [ ] Remove background noise
+            - [ ] Enhance bone from background removed image
         - [ ] Enhance image contrast
     - Deep Learning
         - [ ] Prepare data for DL training
