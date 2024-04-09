@@ -1,8 +1,19 @@
+from typing import Any
 import cv2
 
 class IntensityTransformation:
-    def __init__(self) -> None:
-        pass
+    def __init__(self, linear_streching=False, hist_eq=False):
+        self.linear_streching = linear_streching
+        self.hist_eq = hist_eq
+        
+    def __call__(self,img) -> Any:
+        if self.linear_streching:
+            return self.linear_strerching(img=img)
+        elif self.hist_eq:
+            return self.histogram_equalization(img=img)
+        else:
+            print('No intensity transformation method selected')
+            return img
     
     def load_img(self, img_path):
         img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
@@ -11,6 +22,7 @@ class IntensityTransformation:
         
     def linear_strerching(self, img):
         img = self.load_img(img) if isinstance(img, str) else img
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         min_intensity = img.min()
         max_intensity = img.max()
         img = (img - min_intensity) / (max_intensity - min_intensity) * 255
@@ -18,6 +30,7 @@ class IntensityTransformation:
     
     def histogram_equalization(self, img):
         img = self.load_img(img) if isinstance(img, str) else img
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img = cv2.equalizeHist(img)
         return img
 
