@@ -2,11 +2,38 @@ import cv2
 import matplotlib.pyplot as plt
 
 class ImageThresholding:
-    def __init__(self, blur=False, blur_kernel=5):
+    def __init__(self, blur=False, 
+                blur_kernel=5, 
+                global_thresholding=False, 
+                adaptive_mean_thresholding=False, 
+                adaptive_gaussian_thresholding=False, 
+                otsu_thresholding=False, 
+                triangle_thresholding=False):
         self.blur = blur
         self.blur_kernel = blur_kernel
         self.img = None
         self.current_img_path = None
+        self.global_thresholding = global_thresholding
+        self.adaptive_mean_thresholding = adaptive_mean_thresholding
+        self.adaptive_gaussian_thresholding = adaptive_gaussian_thresholding
+        self.otsu_thresholding = otsu_thresholding
+        self.triangle_thresholding = triangle_thresholding
+        
+    def __call__(self, img):
+        if self.global_thresholding:
+            return self.global_thresholding(img)
+        elif self.adaptive_mean_thresholding:
+            return self.adaptive_mean_thresholding(img)
+        elif self.adaptive_gaussian_thresholding:
+            return self.adaptive_gaussian_thresholding(img)
+        elif self.otsu_thresholding:
+            return self.otsu_thresholding(img)
+        elif self.triangle_thresholding:
+            return self.triangle_thresholding(img)
+        else:
+            print('No thresholding method selected')
+            return img
+        
     
     def load_img(self, img_path):
         if img_path == self.current_img_path:
