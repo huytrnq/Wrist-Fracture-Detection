@@ -1,5 +1,6 @@
 import os 
 import cv2
+import numpy as np
 
 from utils.thresholding import ImageThresholding
 from utils.intensity_transforms import IntensityTransformation
@@ -12,7 +13,8 @@ if __name__ == '__main__':
     for path, img0, img in preprocess:
         print(path)
         if '0001_1297860395_01_WRI-L1_M014' in path:
-            cv2.imshow('Image', img)
+            concat_img = np.concatenate((img0, img), axis=1)
+            cv2.imshow('Results', concat_img)
             cv2.waitKey(0)
             cv2.destroyAllWindows()
             break
