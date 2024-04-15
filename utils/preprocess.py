@@ -39,7 +39,7 @@ class Preprocessor:
         if isinstance(path, str) and Path(path).suffix == '.txt':
             path = Path(path).read_text().splitlines()
         files = []
-        for p in sorted(p) if isinstance(path, (list, tuple)) else [path]:
+        for p in sorted(path) if isinstance(path, (list, tuple)) else [path]:
             p = str(Path(p).resolve())
             if "*" in p:
                 files.extend(sorted(glob(p, recursive=True))) #glob

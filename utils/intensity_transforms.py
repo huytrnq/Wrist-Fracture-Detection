@@ -38,7 +38,7 @@ class IntensityTransformation:
 
 
 if __name__ == '__main__':
-    img_path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img/0031_1007172623_02_WRI-R1_M009.png'
+    img_path = "C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX\images_part1//0001_1297860395_01_WRI-L1_M014.png"
     img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     assert img is not None, "file could not be read, check with os.path.exists()"
     intensity = IntensityTransformation()

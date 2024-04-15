@@ -8,11 +8,11 @@ from utils.intensity_transforms import IntensityTransformation
 from utils.preprocess import Preprocessor
 
 if __name__ == '__main__':
-    path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img'
+    path = "C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX\images_part1"
     img_size = (256, 256)
     transform_compose = Compose([
         IntensityTransformation(hist_eq=True),
-        ImageThresholding(use_otsu_thresholding=True)
+        ImageThresholding(thresholding_method='otsu')
     ])
     preprocess = Preprocessor(path, img_size, transforms=transform_compose)
     for path, img0, img in preprocess:

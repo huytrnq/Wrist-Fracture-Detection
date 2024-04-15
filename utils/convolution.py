@@ -12,28 +12,17 @@ class Convolution:
         # Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, (self.kernel_size, self.kernel_size), 0)
 
-        # Define the Sobel kernels
-        sobel_kernel_x = np.array([[1, 0, -1], [2, 0, -2], [1, 0, -1]])
-        sobel_kernel_y = np.array([[1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+        result = cv2.Canny(blurred, 100, 200)
 
-        # Apply the Sobel kernels using filter2D
-        edges_x = cv2.filter2D(blurred, -1, sobel_kernel_x)
-        edges_y = cv2.filter2D(blurred, -1, sobel_kernel_y)
-
-        # Threshold the gradient magnitude to get binary edge images
-        edges_x = cv2.threshold(np.abs(edges_x), 100, 255, cv2.THRESH_BINARY)[1]
-        edges_y = cv2.threshold(np.abs(edges_y), 100, 255, cv2.THRESH_BINARY)[1]
-
-        return edges_x, edges_y, blurred
+        return result, blurred
     
     
 if __name__ == '__main__':
-    path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img/0001_1297860395_01_WRI-L1_M014.png'
+    path ="C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX\images_part1//0001_1297860395_01_WRI-L1_M014.png"
     conv = Convolution(kernel_size=5)
     img = cv2.imread(path)
-    edges_x, edges_y, blured = conv(img)
-    concat_img = np.concatenate((edges_x, edges_y), axis=1)
+    edges, blured = conv(img)
     cv2.imshow('Blur', blured)
-    cv2.imshow('Results', concat_img)
+    cv2.imshow('Results', edges)
     cv2.waitKey(0)
     cv2.destroyAllWindows()

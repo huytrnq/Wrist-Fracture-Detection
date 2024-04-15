@@ -4,12 +4,8 @@ import numpy as np
 
 class ImageThresholding:
     def __init__(self, blur=False, 
-                blur_kernel=5, 
-                use_global_thresholding=False, 
-                use_adaptive_mean_thresholding=False, 
-                use_adaptive_gaussian_thresholding=False, 
-                use_otsu_thresholding=False, 
-                use_triangle_thresholding=False,
+                blur_kernel=5,
+                thresholding_method = 'otsu',
                 thesh_value=100,
                 max_value=255,
                 block_size=11,
@@ -22,22 +18,18 @@ class ImageThresholding:
         self.block_size = block_size
         self.C = C
         self.current_img_path = None
-        self.use_global_thresholding = use_global_thresholding
-        self.use_adaptive_mean_thresholding = use_adaptive_mean_thresholding
-        self.use_adaptive_gaussian_thresholding = use_adaptive_gaussian_thresholding
-        self.use_otsu_thresholding = use_otsu_thresholding
-        self.use_triangle_thresholding = use_triangle_thresholding
+        self.method = thresholding_method
         
     def __call__(self, img):
-        if self.use_global_thresholding:
+        if self.method == 'global':
             return self.global_thresholding(img)
-        elif self.use_adaptive_mean_thresholding:
+        elif self.method == 'adaptive_mean':
             return self.adaptive_mean_thresholding(img)
-        elif self.use_adaptive_gaussian_thresholding:
+        elif self.method == 'adaptive_gaussian':
             return self.adaptive_gaussian_thresholding(img)
-        elif self.use_otsu_thresholding:
+        elif self.method == 'otsu':
             return self.otsu_thresholding(img)
-        elif self.use_triangle_thresholding:
+        elif self.method == 'triangle':
             return self.triangle_thresholding(img)
         else:
             print('No thresholding method selected')
