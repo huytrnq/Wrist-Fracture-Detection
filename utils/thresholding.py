@@ -46,7 +46,7 @@ class ImageThresholding:
     def global_thresholding(self, img):
         self.img = self.load_img(img) if type(img) is str else img
         self.img = self.img.astype(np.uint8)
-        ret, th1 = cv2.threshold(self.img, self.threshold_value, self.max_value, cv2.THRESH_BINARY)
+        ret, th1 = cv2.threshold(self.img, self.thresh_value, self.max_value, cv2.THRESH_BINARY)
         return th1
 
     def adaptive_mean_thresholding(self, img):
@@ -81,7 +81,7 @@ class ImageThresholding:
         plt.show()
         
 if __name__ == '__main__':
-    image_path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img/0029_0571570953_01_WRI-L1_M008.png'
+    image_path = "C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX\images_part1//0001_1297860395_01_WRI-L1_M014.png"
     image = ImageThresholding()
     gt_image = image.global_thresholding(image_path)
     am_image = image.adaptive_mean_thresholding(image_path)
