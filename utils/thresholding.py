@@ -6,7 +6,7 @@ class ImageThresholding:
     def __init__(self, blur=False, 
                 blur_kernel=5,
                 thresholding_method = 'otsu',
-                thesh_value=100,
+                thesh_value=125,
                 max_value=255,
                 block_size=11,
                 C=2):
@@ -31,6 +31,8 @@ class ImageThresholding:
             return self.otsu_thresholding(img)
         elif self.method == 'triangle':
             return self.triangle_thresholding(img)
+        elif self.method == 'peak':
+            return self.peak_thresholding(img)
         else:
             print('No thresholding method selected')
             return img
@@ -72,6 +74,14 @@ class ImageThresholding:
         self.img = self.img.astype(np.uint8)
         _, th1 = cv2.threshold(self.img, 0, self.max_value, cv2.THRESH_BINARY+cv2.THRESH_TRIANGLE)
         return th1
+
+    def peak_thresholding(self, img):
+        self.img = self.load_img(img) if type(img) is str else img
+        self.img = self.img.astype(np.uint8)
+        plt.hist(self.img)
+        plt.show()
+        # the idea is to get a threshold by picking peaks in the histogram. but the histogram is pretty noisy so ther needs to be some smoothing or smth
+        return self.img
     
     def display_images(self, images, titles):
         for i in range(len(images)):
@@ -83,9 +93,16 @@ class ImageThresholding:
 if __name__ == '__main__':
     image_path = "C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX\images_part1//0001_1297860395_01_WRI-L1_M014.png"
     image = ImageThresholding()
+    '''
     gt_image = image.global_thresholding(image_path)
     am_image = image.adaptive_mean_thresholding(image_path)
     ag_image = image.adaptive_gaussian_thresholding(image_path)
     ot_image = image.otsu_thresholding(image_path)
     tr_image = image.triangle_thresholding(image_path)
-    image.display_images([image.img, gt_image, am_image, ag_image, ot_image, tr_image], ['Original Image', 'Global Thresholding (v=100)', 'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding', 'Otsu Thresholding', 'Triangle Thresholding'])    
+    image.display_images([image.img, gt_image, am_image, ag_image, ot_image, tr_image], ['Original Image', 'Global Thresholding (v=100)', 'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding', 'Otsu Thresholding', 'Triangle Thresholding'])
+    '''
+    img = image.load_img(image_path)
+    img = cv2.equalizeHist(img)
+    pk_image = image.peak_thresholding(img)
+    gt_image = image.global_thresholding(img)
+    image.display_images([pk_image, gt_image], ['peak Image', 'Global Thresholding'])

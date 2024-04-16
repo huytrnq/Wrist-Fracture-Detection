@@ -36,6 +36,11 @@ class IntensityTransformation:
         img = cv2.equalizeHist(img)
         return img
 
+    def clahe(self, img):
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        img = clahe.apply(img)
+        return img
+
 
 if __name__ == '__main__':
     img_path = "C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX\images_part1//0001_1297860395_01_WRI-L1_M014.png"
@@ -44,6 +49,7 @@ if __name__ == '__main__':
     intensity = IntensityTransformation()
     linear_streched_img = intensity.linear_strerching(img)
     his_eq_img = intensity.histogram_equalization(img)
-    cv2.imshow('Linear Stretching', his_eq_img)
+    clahe_img = intensity.clahe(img)
+    cv2.imshow('Linear Stretching', clahe_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
