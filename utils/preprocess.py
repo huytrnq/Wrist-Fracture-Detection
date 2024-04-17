@@ -66,7 +66,7 @@ class Preprocessor:
         if self.count == self.file_count:
             return StopIteration
         path = self.files[self.count]
-        img0 = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        img0 = cv2.imread(path, cv2.IMREAD_UNCHANGED)
         self.count += 1
         assert img0 is not None, f"File not found {path}"
         

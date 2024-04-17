@@ -6,8 +6,8 @@ class ImageThresholding:
     def __init__(self, blur=False, 
                 blur_kernel=5,
                 thresholding_method = 'otsu',
-                thesh_value=125,
-                max_value=255,
+                thesh_value=32000,
+                max_value=65535,
                 block_size=11,
                 C=2):
         self.blur = blur
@@ -41,7 +41,7 @@ class ImageThresholding:
         if img_path == self.current_img_path:
             return self.img
         self.current_img_path = img_path
-        self.img = cv2.imread(img_path, 0)
+        self.img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
         self.img = cv2.medianBlur(self.img, self.blur_kernel) if self.blur else self.img
         return self.img
 

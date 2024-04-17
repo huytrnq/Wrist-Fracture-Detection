@@ -16,7 +16,7 @@ class IntensityTransformation:
             return img
     
     def load_img(self, img_path):
-        img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
         assert img is not None, "file could not be read, check with os.path.exists()"
         return img
         
@@ -26,7 +26,7 @@ class IntensityTransformation:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         min_intensity = img.min()
         max_intensity = img.max()
-        img = (img - min_intensity) / (max_intensity - min_intensity) * 255
+        img = (img - min_intensity) / (max_intensity - min_intensity) * 65535
         return img
     
     def histogram_equalization(self, img):
