@@ -15,14 +15,14 @@ if __name__ == '__main__':
         # IntensityTransformation(clahe=True),
         IntensityTransformation(hist_eq=True),
         ImageThresholding(use_otsu_thresholding=True),
-        Canny(kernel_size=5),
+        # Canny(kernel_size=5),
     ])
     preprocess = Preprocessor(path, img_size, transforms=transform_compose)
     for path, img0, img in preprocess:
         print(path)
-        if '0001_1297860395_01_WRI-L1_M014' in path:
-            concat_img = np.concatenate((img0, img), axis=1)
-            cv2.imshow('Results', concat_img)
-            cv2.waitKey(0)
-            cv2.destroyAllWindows()
+        # if '0001_1297860395_01_WRI-L1_M014' in path:
+        concat_img = np.concatenate((img0, img), axis=1)
+        cv2.imshow('Results', concat_img)
+        if cv2.waitKey(0) == ord('q'):
             break
+        cv2.destroyAllWindows()
