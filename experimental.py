@@ -28,23 +28,23 @@ def hist_eq(img):
         return skimage.exposure.equalize_hist(img, nbins=65536)
 
 def window(img):
-    thresh = round(skimage.filters.threshold_otsu(img))
+    thresh = np.max(img)-255
     img -= thresh
     res = np.zeros(img.shape, dtype=np.uint8)
     targets = img < 256
     res[targets] = img[targets]
-    print(img.dtype)
-    print(np.min(img), np.max(img))
+    print(res.dtype)
+    print(np.min(res), np.max(res))
     return res
 
 def resize(img):
     height, width = img.shape
-    return skimage.transform.resize(img, (int(height / 2), int(width / 2)), preserve_range=True)
+    return skimage.transform.resize(img, (int(height / 2), int(width / 2)), preserve_range=True).astype(img.dtype)
 
 
 if __name__ == '__main__':
     PATH = "C://Users\lok20\OneDrive\_Master\MAIA-ERASMUS//2 Semester\Interdiscipilanry Project AIA_ML_DL\GRAZPEDWRI-DX"
-
+    breaker = False
     for dirpath, dirnames, filenames in os.walk(PATH):
         for fp in filenames:
             if fp.endswith(".png"):
@@ -68,4 +68,8 @@ if __name__ == '__main__':
                 if k != 27:
                     continue
                 else:
+                    breaker = True
                     break
+        if breaker:
+            break
+
