@@ -1,4 +1,5 @@
 from typing import Any
+import numpy as np
 import cv2
 
 class IntensityTransformation:
@@ -74,6 +75,31 @@ class IntensityTransformation:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img = cv2.equalizeHist(img)
         return img
+    
+    def equalize_histogram_16bit_manual(self,img):
+        
+        # Check if the image is 16-bit
+        if img.dtype != np.uint16:
+            raise ValueError("Image is not a 16-bit image.")
+
+        # Calculate the histogram
+        hist, bins = np.histogram(img.flatten(), 65536, [0, 65536])
+        
+        # Calculate the cumulative distribution function
+        cdf = hist.cumsum()
+        cdf_normalized = cdf * float(hist.max()) / cdf.max()
+
+        # Normalize the CDF
+        cdf_m = np.ma.masked_equal(cdf, 0)
+        cdf_m = (cdf_m - cdf_m.min()) * 65535 / (cdf_m.max() - cdf_m.min())
+        cdf = np.ma.filled(cdf_m, 0).astype('uint16')
+
+        # Map the original pixels to equalized values
+        img_equalized = cdf[img]
+
+        return img_equalized
+
+    
 
 if __name__ == '__main__':
     img_path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img/0031_1007172623_02_WRI-R1_M009.png'
