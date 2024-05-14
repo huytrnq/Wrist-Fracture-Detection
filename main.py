@@ -9,13 +9,13 @@ from utils.intensity_transforms import IntensityTransformation
 from utils.preprocess import Preprocessor
 
 if __name__ == '__main__':
-    path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img'
+    path = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/dataset/img/fracture'
     img_size = (256, 256)
     transform_compose = Compose([
         # IntensityTransformation(clahe=True),
         IntensityTransformation(hist_eq=True),
         ImageThresholding(use_otsu_thresholding=True),
-        # Canny(kernel_size=5),
+        Canny(kernel_size=5),
     ])
     preprocess = Preprocessor(path, img_size, transforms=transform_compose)
     for path, img0, img in preprocess:
