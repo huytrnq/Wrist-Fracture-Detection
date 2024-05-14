@@ -18,6 +18,7 @@ def update_canny():
     threshold1 = threshold1_scale.get()
     threshold2 = threshold2_scale.get()
     edges = conv(img, threshold1, threshold2)
+    cv2.imshow('Original', img)
     cv2.imshow('Results', edges)
     if cv2.waitKey(1) == ord('q'):  # Exit if 'q' is pressed
         cv2.destroyAllWindows()
@@ -35,11 +36,16 @@ def next_image():
         root.quit()
 
 if __name__ == '__main__':
-    path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img/'
+    path = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/dataset/img/fracture'
     image_paths = iter(glob(path + '*.png'))
     
-    conv = Canny(kernel_size=5)
+    conv = Canny(kernel_size=7)
+    image_paths = iter(glob(path + '/*.png'))  # Add a slash before the asterisk
     img = cv2.imread(next(image_paths))
+    from intensity_transforms import IntensityTransformation
+    
+    intensity_transform = IntensityTransformation(clahe=True)
+    img = intensity_transform(img)
 
     root = tk.Tk()
     root.title("Canny Thresholds")

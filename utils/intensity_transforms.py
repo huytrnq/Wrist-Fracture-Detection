@@ -99,6 +99,39 @@ class IntensityTransformation:
 
         return img_equalized
 
+
+def calculate_mean_histogram(image_paths):
+    mean_hist = np.zeros(256)
+    num_images = len(image_paths)
+    
+    for path in image_paths:
+        image = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        if image is not None:
+            hist = cv2.calcHist([image], [0], None, [256], [0, 256])
+            mean_hist += hist[:, 0]
+    
+    mean_hist /= num_images
+    return mean_hist
+
+def histogram_matching(source_image, reference_histogram):
+    # Calculate the histogram of the source image
+    src_hist, bins = np.histogram(source_image.flatten(), 256, [0, 256])
+    src_cdf = src_hist.cumsum()
+
+    # Normalize the CDF
+    src_cdf_normalized = src_cdf * (reference_histogram.sum() / src_cdf.max())
+    reference_cdf_normalized = reference_histogram.cumsum()
+
+    # Create a lookup table
+    lookup_table = np.zeros(256, dtype=np.uint8)
+    for i in range(256):
+        # Use 'left' to find the first index where the reference CDF exceeds or equals src_cdf_normalized[i]
+        lookup_val = np.searchsorted(reference_cdf_normalized, src_cdf_normalized[i], side='left')
+        lookup_table[i] = lookup_val
+
+    # Map the source image pixels to the reference histogram
+    matched_image = cv2.LUT(source_image, lookup_table)
+    return matched_image
     
 
 if __name__ == '__main__':

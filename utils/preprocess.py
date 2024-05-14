@@ -77,3 +77,39 @@ class Preprocessor:
     
         return path, img0, img
     
+    
+def sliding_window(image, stepSize, windowSize):
+    """Slide a window across the image
+    
+    Args:
+    image (numpy.ndarray): The input image.
+    stepSize (int): The number of pixels to skip each time the window moves.
+    windowSize (int): The width/height of the window (assuming a square window).
+    
+    Yields:
+    tuple: Contains the x and y coordinates of the top-left corner of the window,
+        and the window itself as a numpy array.
+    """
+    # Calculate the dimensions of the image
+    height, width = image.shape[:2]
+
+    # Iterate over the vertical axis
+    for y in range(0, height - windowSize + 1, stepSize):
+        for x in range(0, width - windowSize + 1, stepSize):
+            # Yield the current window
+            yield (x, y, image[y:y + windowSize, x:x + windowSize])
+
+    # Check if we need to include the last row and column windows
+    if (height - windowSize) % stepSize != 0:
+        # Process the last row
+        for x in range(0, width - windowSize + 1, stepSize):
+            yield (x, height - windowSize, image[height - windowSize:height, x:x + windowSize])
+
+    if (width - windowSize) % stepSize != 0:
+        # Process the last column
+        for y in range(0, height - windowSize + 1, stepSize):
+            yield (width - windowSize, y, image[y:y + windowSize, width - windowSize:width])
+
+    # Include the bottom-right corner window if both dimensions are uneven
+    if (height - windowSize) % stepSize != 0 and (width - windowSize) % stepSize != 0:
+        yield (width - windowSize, height - windowSize, image[height - windowSize:height, width - windowSize:width])
