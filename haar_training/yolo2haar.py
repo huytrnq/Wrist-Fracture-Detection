@@ -33,13 +33,14 @@ def convert_annotations(txt_path, image_path, output_path):
 
 if __name__ == '__main__':
     mode = 'train'
-    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/'
+    # dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/'
+    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/dataset/img'
     label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/txt'
     class_name = 'fracture'
     
-    for image_path in glob.glob(os.path.join(dataset_root, mode, class_name, '*.png')):
+    for image_path in glob.glob(os.path.join(dataset_root, class_name, '*.png')):
         image_name = os.path.basename(image_path)
         txt_path = os.path.join(label_root, image_name.replace('.png', '.txt'))
-        output_path = os.path.join(dataset_root, 'annotations.txt')
+        output_path = os.path.join(dataset_root, 'annotations2.txt')
 
         convert_annotations(txt_path, image_path, output_path)

@@ -40,7 +40,7 @@ def load_yolo_labels(path, shape, classes=None):
         classes (list, optional): list of classes. Defaults to None. fracture = 3
 
     Returns:
-        list: list of labels
+        list: list of labels in the format [class, x1, y1, x2, y2]
     """
     height, width = shape
     with open(path) as file:
