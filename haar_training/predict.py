@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 classifier_path = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/haar_training/classifier/24x24/cascade.xml'
 haar_cascade = cv2.CascadeClassifier(classifier_path)
 
-test_folder = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/test/fracture/'
+test_folder = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/images/test/normal'
 save_folder = 'results'
 
 os.makedirs(save_folder, exist_ok=True)

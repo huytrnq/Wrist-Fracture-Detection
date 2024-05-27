@@ -30,17 +30,24 @@ def convert_annotations(txt_path, image_path, output_path):
 
     with open(output_path, 'a') as file:
         file.write(annotation + '\n')
+    return len(lines)
 
 if __name__ == '__main__':
     mode = 'train'
     # dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/'
-    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/dataset/img'
-    label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/txt'
+    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/images/train/'
+    label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/labels/train'
     class_name = 'fracture'
     
+    total_count = 0
     for image_path in glob.glob(os.path.join(dataset_root, class_name, '*.png')):
         image_name = os.path.basename(image_path)
-        txt_path = os.path.join(label_root, image_name.replace('.png', '.txt'))
-        output_path = os.path.join(dataset_root, 'annotations2.txt')
+        txt_path = os.path.join(label_root, class_name, image_name.replace('.png', '.txt'))
+        output_path = 'annotations.txt'
 
-        convert_annotations(txt_path, image_path, output_path)
+        count_per_file = convert_annotations(txt_path, image_path, output_path)
+        total_count += count_per_file
+        print(f'Converted {count_per_file} annotations from {image_path}')
+    print(f'Total annotations: {total_count}')
+    
+# 436
