@@ -32,13 +32,13 @@ def resize_with_ratio(img, size):
     return cv2.resize(img, (w, h))
 
 
-def load_yolo_labels(path, shape, classes=None):
+def load_yolo_labels(path, shape, classes=None, normalize=False):
     """Load the YOLO labels from the file
 
     Args:
         path (str): path to the YOLO labels
         classes (list, optional): list of classes. Defaults to None. fracture = 3
-
+        normalize (bool, optional): whether to normalize the labels. Defaults to True.
     Returns:
         list: list of labels in the format [class, x1, y1, x2, y2]
     """
@@ -54,6 +54,11 @@ def load_yolo_labels(path, shape, classes=None):
         y = float(y) * height
         w = float(w) * width
         h = float(h) * height
+        if normalize:
+            x /= width
+            y /= height
+            w /= width
+            h /= height
         xyxy = [c, x - w / 2, y - h / 2, x + w / 2, y + h / 2]
         if classes:
             if c not in classes:

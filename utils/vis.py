@@ -23,6 +23,5 @@ def draw_bboxes(image, bboxes, color=(0, 0, 255), type='xyxy', normalize=False):
         else:
             raise ValueError('Invalid type')
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-        print(x1, y1, x2, y2)
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
     return image

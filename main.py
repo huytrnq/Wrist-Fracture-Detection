@@ -1,28 +1,21 @@
 import os 
 import cv2
 import numpy as np
+from glob import glob
 
-from utils.transforms import Compose
-from utils.edge_detection import Canny
-from utils.thresholding import ImageThresholding
-from utils.intensity_transforms import IntensityTransformation
-from utils.preprocess import Preprocessor
+from models.models import Wrist_Fracture_Detection
 
 if __name__ == '__main__':
-    path = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/dataset/img/fracture'
-    img_size = (256, 256)
-    transform_compose = Compose([
-        # IntensityTransformation(clahe=True),
-        IntensityTransformation(hist_eq=True),
-        ImageThresholding(use_otsu_thresholding=True),
-        Canny(kernel_size=5),
-    ])
-    preprocess = Preprocessor(path, img_size, transforms=transform_compose)
-    for path, img0, img in preprocess:
-        print(path)
-        # if '0001_1297860395_01_WRI-L1_M014' in path:
-        concat_img = np.concatenate((img0, img), axis=1)
-        cv2.imshow('Results', concat_img)
-        if cv2.waitKey(0) == ord('q'):
-            break
-        cv2.destroyAllWindows()
+    
+    wfd = Wrist_Fracture_Detection(model='models/weights/svm.pkl', visualize=True)
+    
+    path = 'MLDataset/crop_data/images/test'
+    
+    for image_path in glob(os.path.join(path, '**/*.png')):
+        image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+        
+        predictions = wfd.predict(image)
+        print(f"Predictions: {predictions}")
+        print(f"Image: {image_path}")
+        print()
+    

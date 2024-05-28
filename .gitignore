@@ -9,6 +9,7 @@ __pycache__/
 #data
 dataset/
 MLDataset/
+haar_training/
 
 # Distribution / packaging
 .Python
