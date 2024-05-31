@@ -35,8 +35,8 @@ def convert_annotations(txt_path, image_path, output_path):
 if __name__ == '__main__':
     mode = 'train'
     # dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/'
-    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/images/train/'
-    label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/labels/train'
+    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/grid_data/images/train/'
+    label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/grid_data/labels/train/'
     class_name = 'fracture'
     
     total_count = 0
@@ -51,3 +51,4 @@ if __name__ == '__main__':
     print(f'Total annotations: {total_count}')
     
 # 436
+# 1819

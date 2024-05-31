@@ -40,20 +40,18 @@ def load_model(filename):
 
 
 class Wrist_Fracture_Detection:
-    def __init__(self, model=None, step_size=128, window_size=256, visualize=False):
+    def __init__(self, model=None, step_size=128, window_size=256):
         """Wrist Fracture Detection
 
         Args:
             model (str, optional): Path to exported model. Defaults to None.
             step_size (int, optional): Stride step. Defaults to 128.
             window_size (int, optional): Sliding window size. Defaults to 256.
-            visualize (bool, optional): Visualize the regions of interest. Defaults to False.
         """
         self.model = self.load(model) if model else None
         self.hog = cv2.HOGDescriptor()
         self.step_size = step_size
         self.window_size = window_size
-        self.visualize = visualize
 
     def fit(self, X, y):
         """Fit the model
@@ -64,7 +62,7 @@ class Wrist_Fracture_Detection:
         """
         self.model.fit(X, y)
 
-    def predict(self, X):
+    def predict(self, image):
         """Predict
 
         Args:
@@ -75,16 +73,21 @@ class Wrist_Fracture_Detection:
         """
         rois = []
 
-        for x, y, window in sliding_window(X, self.step_size, self.window_size):
+        feature_windows = []
+        image = self.preprocess(image)
+        for x, y, window in sliding_window(image, self.step_size, self.window_size):
             if window.shape[0] != self.window_size or window.shape[1] != self.window_size:
                 continue
-            window = self.preprocess(window)
             features = self.feature_extraction(window)
-            if self.model.predict(features):
-                rois.append((x, y))
-        if self.visualize:
-            self.visualize_rois(X, rois)
-        return rois
+            feature_windows.append(features)
+            # if self.model.predict(features):
+            rois.append((x, y))
+            
+        results = self.model.predict(feature_windows)
+        ### Get the rois which contain the fracture
+        rois = np.array(rois)
+        selected_rois = rois[results == 1]
+        return selected_rois
 
     def save(self, filename):
         """Save the model
@@ -174,7 +177,7 @@ class Wrist_Fracture_Detection:
         Returns:
             np.array: Features
         """
-        return self.hog.compute(img).reshape(1, -1)
+        return self.hog.compute(img).ravel()
 
     def visualize_rois(self, img, rois):
         """Visualize regions of interest
@@ -192,5 +195,7 @@ class Wrist_Fracture_Detection:
                 2,
             )
         cv2.imshow("Image", img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        if cv2.waitKey(0) & 0xFF == ord("q"):     
+            cv2.destroyAllWindows()
+            import sys
+            sys.exit(0)

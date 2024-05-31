@@ -42,7 +42,7 @@ def load_yolo_labels(path, shape, classes=None, normalize=False):
     Returns:
         list: list of labels in the format [class, x1, y1, x2, y2]
     """
-    height, width = shape
+    height, width = shape[:2]
     with open(path) as file:
         lines = file.readlines()
     labels = []

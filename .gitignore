@@ -9,6 +9,7 @@ __pycache__/
 #data
 dataset/
 MLDataset/
+models/weights/
 haar_training/
 
 # Distribution / packaging
