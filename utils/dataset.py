@@ -12,35 +12,38 @@ from glob import glob
 
 IMG_FORMATS = "bmp", "dng", "jpeg", "jpg", "mpo", "png", "tif", "tiff", "webp", "pfm" 
 
-def resize_with_ratio(img, size):
-    """Resize the image with the original aspect ratio
+def resize_keep_aspect_ratio(image, target_size):
+    """Resize the image while keeping the aspect ratio
 
     Args:
-        img (np.array): image to be resized
-        size (tuple): new size of the image
+        image (array): Image to resize.
+        target_size (tuple): Target size in the format (width, height).
 
     Returns:
-        np.array: resized image
+        array: Resized image.
     """
-    h, w = img.shape[:2]
-    if h > w:
-        h, w = size
-        w = int(w * (w / h))
+    h, w = image.shape[:2]
+    target_w, target_h = target_size
+    if w > h:
+        new_w = target_w
+        new_h = int(h * new_w / w)
     else:
-        w, h = size
-        h = int(h * (h / w))
-    return cv2.resize(img, (w, h))
+        new_h = target_h
+        new_w = int(w * new_h / h)
+    return cv2.resize(image, (new_w, new_h))
 
 
 def load_yolo_labels(path, shape, classes=None, normalize=False):
     """Load the YOLO labels from the file
 
     Args:
-        path (str): path to the YOLO labels
-        classes (list, optional): list of classes. Defaults to None. fracture = 3
-        normalize (bool, optional): whether to normalize the labels. Defaults to True.
+        path (str): Path to the YOLO labels.
+        shape (tuple): Shape of the image.
+        classes (list, optional): List of classes. Defaults to None. fracture = 3.
+        normalize (bool, optional): Whether to normalize the labels. Defaults to False.
+
     Returns:
-        list: list of labels in the format [class, x1, y1, x2, y2]
+        list: List of labels in the format [class, x1, y1, x2, y2].
     """
     height, width = shape[:2]
     with open(path) as file:
@@ -65,6 +68,34 @@ def load_yolo_labels(path, shape, classes=None, normalize=False):
                 continue
         labels.append(xyxy)
     return labels
+
+
+def adjust_labels_for_pooling(labels, original_shape, pool_size):
+    """
+    Adjusts labels to account for pooling.
+
+    Args:
+    labels (list): List of labels.
+    original_shape (tuple): Shape of the original image.
+    pool_size (tuple): Size of the pooling window.
+
+    Returns:
+    list: Adjusted labels.
+    """
+    height, width = original_shape[:2]
+    scale_x = pool_size[1]
+    scale_y = pool_size[0]
+
+    adjusted_labels = []
+    for label in labels:
+        c, x1, y1, x2, y2 = label
+        x1 /= scale_x
+        y1 /= scale_y
+        x2 /= scale_x
+        y2 /= scale_y
+        adjusted_labels.append([c, x1, y1, x2, y2])
+
+    return adjusted_labels
 
 class DataLoader:
     def __init__(self, path, img_size, transforms=None) -> None:

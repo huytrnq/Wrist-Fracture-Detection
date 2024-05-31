@@ -3,6 +3,8 @@ import cv2
 from scipy.ndimage import convolve, uniform_filter
 import torch
 import torchvision.models as models
+from skimage.feature import hog
+from skimage.feature import local_binary_pattern
 
 class GaborDescriptor:
     def __init__(self, use_alexnet=False, padding='nopad', normalize=True, lambdas=[1.0, 2.0, 3.0], thetas=np.arange(0, np.pi, np.pi / 6), sigmas=[3, 5]):
@@ -74,3 +76,37 @@ class GaborDescriptor:
                 filtered = convolve(image, kernel, mode='reflect')
             responses.append(filtered)
         return np.array(responses)
+    
+    
+class HogDescriptor:
+    def __init__(self):
+        self.hog = hog
+    
+    def __call__(self, image):
+        feature, hog_image = hog(image, orientations=16, pixels_per_cell=(8, 8),
+                        cells_per_block=(2, 2), visualize=True)
+        return feature
+    
+
+class LBP:
+    def __init__(self, num_points, radius):
+        self.num_points = num_points
+        self.radius = radius
+        
+    def compute(self, image):
+        # Assuming the image is already in grayscale
+        lbp = local_binary_pattern(image, self.num_points, self.radius, method="uniform")
+        # Return the histogram of the LBP
+        # (hist, _) = np.histogram(lbp.ravel(), bins=np.arange(0, self.num_points + 3), range=(0, self.num_points + 2))
+        # hist = hist.astype("float")
+        # hist /= (hist.sum() + 1e-6)
+        return lbp
+
+class LBPDescriptor:
+    def __init__(self, num_points, radius):
+        self.num_points = num_points
+        self.radius = radius
+        self.lbp = LBP(self.num_points, self.radius)
+        
+    def __call__(self, image):
+        return self.lbp.compute(image)

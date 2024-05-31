@@ -3,6 +3,7 @@ from joblib import dump
 
 import cv2
 import numpy as np
+import skimage
 from skimage import exposure
 from skimage.filters import unsharp_mask
 from skimage.filters import threshold_otsu
@@ -38,20 +39,104 @@ def load_model(filename):
     print(f"Model loaded from {filename}")
     return model
 
+# Function to get original coordinates from pooled coordinates
+def get_original_coordinates(pooled_coords, pooling_factor):
+    """
+    Convert coordinates from pooled image to original image coordinates.
+    
+    Args:
+    pooled_coords (tuple): Coordinates in the pooled image (row1, col1, row2, col2).
+    pooling_factor (tuple): Pooling factor (row_factor, col_factor).
+    
+    Returns:
+    tuple: Coordinates in the original image.
+    """
+    row1, col1, row2, col2 = pooled_coords
+    row_factor, col_factor = pooling_factor
+    return row1 * row_factor, col1 * col_factor, row2 * row_factor, col2 * col_factor
+
+def iou(box1, box2):
+    x1, y1, x2, y2 = box1
+    x1b, y1b, x2b, y2b = box2
+
+    # Calculate intersection
+    inter_x1 = max(x1, x1b)
+    inter_y1 = max(y1, y1b)
+    inter_x2 = min(x2, x2b)
+    inter_y2 = min(y2, y2b)
+    inter_area = max(0, inter_x2 - inter_x1 + 1) * max(0, inter_y2 - inter_y1 + 1)
+
+    # Calculate union
+    box1_area = (x2 - x1 + 1) * (y2 - y1 + 1)
+    box2_area = (x2b - x1b + 1) * (y2b - y1b + 1)
+    union_area = box1_area + box2_area - inter_area
+
+    # Calculate IoU
+    return inter_area / union_area
+
+def merge_two_boxes(box1, box2):
+    x1 = min(box1[0], box2[0])
+    y1 = min(box1[1], box2[1])
+    x2 = max(box1[2], box2[2])
+    y2 = max(box1[3], box2[3])
+    return [x1, y1, x2, y2]
+
 
 class Wrist_Fracture_Detection:
-    def __init__(self, model=None, step_size=128, window_size=256):
+    def __init__(self, 
+                model=None, 
+                step_size=64, 
+                window_size=64,
+                pool_size=(4, 4),
+                feature_extractor=None):
         """Wrist Fracture Detection
 
         Args:
             model (str, optional): Path to exported model. Defaults to None.
             step_size (int, optional): Stride step. Defaults to 128.
             window_size (int, optional): Sliding window size. Defaults to 256.
+            pool_size (tuple, optional): Pooling window size. Defaults to (4, 4).
+            feature_extractor (function, optional): Feature extractor. Defaults to None.
         """
         self.model = self.load(model) if model else None
-        self.hog = cv2.HOGDescriptor()
         self.step_size = step_size
         self.window_size = window_size
+        self.pool_size = pool_size
+        self.feature_extractor = feature_extractor
+        
+        
+    def padding(self, image, factor=64, mode='constant', value=0):
+        """
+        Pads an image so that its dimensions are multiples of a given factor.
+
+        Args:
+            image (np.ndarray): The input image.
+            factor (int): The factor to which the dimensions should be multiples of.
+            mode (str): The mode parameter for np.pad.
+            value (int): The padding value to use when mode is 'constant'.
+
+        Returns:
+            np.ndarray: The padded image.
+        """
+        # Get the dimensions of the image
+        h, w = image.shape[:2]
+
+        # Calculate the target dimensions
+        target_h = ((h + factor - 1) // factor) * factor
+        target_w = ((w + factor - 1) // factor) * factor
+
+        # Calculate the padding amounts
+        pad_h = target_h - h
+        pad_w = target_w - w
+
+        # Pad the image
+        if len(image.shape) == 3:  # Color image
+            padded_image = np.pad(image, ((0, pad_h), (0, pad_w), (0, 0)), mode=mode, constant_values=value)
+        else:  # Grayscale image
+            padded_image = np.pad(image, ((0, pad_h), (0, pad_w)), mode=mode, constant_values=value)
+
+        return padded_image
+
 
     def fit(self, X, y):
         """Fit the model
@@ -72,22 +157,27 @@ class Wrist_Fracture_Detection:
             Predictions: np.array
         """
         rois = []
+        scaled_roi = []
 
         feature_windows = []
         image = self.preprocess(image)
+        image = self.padding(image, factor=self.window_size)
         for x, y, window in sliding_window(image, self.step_size, self.window_size):
             if window.shape[0] != self.window_size or window.shape[1] != self.window_size:
                 continue
             features = self.feature_extraction(window)
             feature_windows.append(features)
-            # if self.model.predict(features):
-            rois.append((x, y))
+            rois.append((x, y, x + self.window_size, y + self.window_size))
             
         results = self.model.predict(feature_windows)
         ### Get the rois which contain the fracture
         rois = np.array(rois)
         selected_rois = rois[results == 1]
-        return selected_rois
+        for roi in selected_rois:
+            roi = get_original_coordinates(roi, self.pool_size)
+            scaled_roi.append(roi)
+        # return self.merge_boxes(scaled_roi)
+        return scaled_roi
 
     def save(self, filename):
         """Save the model
@@ -104,7 +194,17 @@ class Wrist_Fracture_Detection:
             filename (str): Path to load the model
         """
         return load_model(filename)
+    
+    def pooling(self, img, pool_size=(4,4)):
+        """Apply pooling to the image
 
+        Args:
+            img (array): Image
+            pool_size (tuple, optional): Pooling Window Size. Defaults to 2.
+        """
+        img = skimage.measure.block_reduce(img, pool_size, np.max)
+        return img
+        
 
     def preprocess(self, img):
         """Preprocess the image
@@ -115,10 +215,12 @@ class Wrist_Fracture_Detection:
         Returns:
             np.array: Preprocessed image
         """
+        
         outputbitdepth = 8
         intensity_crop = 1
         dilate_num = 4
-
+        if self.pool_size:
+            img = self.pooling(img, self.pool_size)
         ### Load mean histogram from the training data
         mean_hist = np.load("mean_hist.npy")
         ### Unsharp masking
@@ -177,7 +279,45 @@ class Wrist_Fracture_Detection:
         Returns:
             np.array: Features
         """
-        return self.hog.compute(img).ravel()
+        return self.feature_extractor(img).ravel()
+    
+    def merge_boxes(self, boxes, iou_threshold=0.2):
+        """
+        Merge overlapping bounding boxes.
+
+        Args:
+            boxes (numpy.ndarray): Array of bounding boxes of shape (N, 4), where N is the number of boxes.
+                                Each box is represented as [x1, y1, x2, y2].
+            iou_threshold (float): Threshold for IoU to merge overlapping boxes.
+
+        Returns:
+            numpy.ndarray: Array of merged bounding boxes.
+        """
+        if len(boxes) == 0:
+            return np.array([])
+        boxes = np.array(boxes)
+
+        # Convert boxes to float if they are not already
+        if boxes.dtype.kind != "f":
+            boxes = boxes.astype(np.float32)
+
+        merged_boxes = []
+        used = np.zeros(len(boxes), dtype=bool)
+
+        for i in range(len(boxes)):
+            if used[i]:
+                continue
+            current_box = boxes[i]
+            for j in range(i + 1, len(boxes)):
+                if used[j]:
+                    continue
+                if iou(current_box, boxes[j]) >= iou_threshold:
+                    current_box = merge_two_boxes(current_box, boxes[j])
+                    used[j] = True
+            merged_boxes.append(current_box)
+            used[i] = True
+
+        return np.array(merged_boxes).astype(int).tolist()
 
     def visualize_rois(self, img, rois):
         """Visualize regions of interest
