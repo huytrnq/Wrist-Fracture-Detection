@@ -39,21 +39,23 @@ def load_model(filename):
     print(f"Model loaded from {filename}")
     return model
 
+
 # Function to get original coordinates from pooled coordinates
 def get_original_coordinates(pooled_coords, pooling_factor):
     """
     Convert coordinates from pooled image to original image coordinates.
-    
+
     Args:
     pooled_coords (tuple): Coordinates in the pooled image (row1, col1, row2, col2).
     pooling_factor (tuple): Pooling factor (row_factor, col_factor).
-    
+
     Returns:
     tuple: Coordinates in the original image.
     """
     row1, col1, row2, col2 = pooled_coords
     row_factor, col_factor = pooling_factor
     return row1 * row_factor, col1 * col_factor, row2 * row_factor, col2 * col_factor
+
 
 def iou(box1, box2):
     x1, y1, x2, y2 = box1
@@ -74,6 +76,7 @@ def iou(box1, box2):
     # Calculate IoU
     return inter_area / union_area
 
+
 def merge_two_boxes(box1, box2):
     x1 = min(box1[0], box2[0])
     y1 = min(box1[1], box2[1])
@@ -83,12 +86,15 @@ def merge_two_boxes(box1, box2):
 
 
 class Wrist_Fracture_Detection:
-    def __init__(self, 
-                model=None, 
-                step_size=64, 
-                window_size=64,
-                pool_size=(4, 4),
-                feature_extractor=None):
+    def __init__(
+        self,
+        model=None,
+        step_size=64,
+        window_size=64,
+        pool_size=(4, 4),
+        feature_extractor=None,
+        heatmap="./heatmap.npy",
+    ):
         """Wrist Fracture Detection
 
         Args:
@@ -97,15 +103,46 @@ class Wrist_Fracture_Detection:
             window_size (int, optional): Sliding window size. Defaults to 256.
             pool_size (tuple, optional): Pooling window size. Defaults to (4, 4).
             feature_extractor (function, optional): Feature extractor. Defaults to None.
+            heatmap (str, optional): Path to heatmap. Defaults to './heatmap.npy'.
         """
         self.model = self.load(model) if model else None
         self.step_size = step_size
         self.window_size = window_size
         self.pool_size = pool_size
         self.feature_extractor = feature_extractor
-        
-        
-    def padding(self, image, factor=64, mode='constant', value=0):
+        self.heatmap = heatmap
+        self.roi_offset_left = (0,0)
+
+    def get_roi_from_heatmap(self, image):
+        """Get region of interest from heatmap
+
+        Args:
+            image array): Image
+
+        Returns:
+            roi: np.array
+        """
+        heatmap = np.load(self.heatmap)
+        coords = np.column_stack(np.where(heatmap > 0))
+        top_left = coords.min(axis=0)
+        bottom_right = coords.max(axis=0)
+        ## Scale the roi coordinates
+        ## order h, w
+        scaled_roi_coords = [
+            top_left[0] / heatmap.shape[0] * image.shape[0],
+            top_left[1] / heatmap.shape[1] * image.shape[1],
+            bottom_right[0] / heatmap.shape[0] * image.shape[0],
+            bottom_right[1] / heatmap.shape[1] * image.shape[1],
+        ]
+        roi_image = image[
+            int(scaled_roi_coords[0]) : int(scaled_roi_coords[2]),
+            int(scaled_roi_coords[1]) : int(scaled_roi_coords[3]),
+        ]
+        ## Set the offset and change to w, h
+        self.roi_offset_left = (int(scaled_roi_coords[1]), int(scaled_roi_coords[0]))
+        return roi_image
+
+    def padding(self, image, factor=64, mode="constant", value=0):
         """
         Pads an image so that its dimensions are multiples of a given factor.
 
@@ -131,12 +168,18 @@ class Wrist_Fracture_Detection:
 
         # Pad the image
         if len(image.shape) == 3:  # Color image
-            padded_image = np.pad(image, ((0, pad_h), (0, pad_w), (0, 0)), mode=mode, constant_values=value)
+            padded_image = np.pad(
+                image,
+                ((0, pad_h), (0, pad_w), (0, 0)),
+                mode=mode,
+                constant_values=value,
+            )
         else:  # Grayscale image
-            padded_image = np.pad(image, ((0, pad_h), (0, pad_w)), mode=mode, constant_values=value)
+            padded_image = np.pad(
+                image, ((0, pad_h), (0, pad_w)), mode=mode, constant_values=value
+            )
 
         return padded_image
-
 
     def fit(self, X, y):
         """Fit the model
@@ -160,21 +203,32 @@ class Wrist_Fracture_Detection:
         scaled_roi = []
 
         feature_windows = []
+        if self.heatmap:
+            image = self.get_roi_from_heatmap(image)
         image = self.preprocess(image)
         image = self.padding(image, factor=self.window_size)
         for x, y, window in sliding_window(image, self.step_size, self.window_size):
-            if window.shape[0] != self.window_size or window.shape[1] != self.window_size:
+            if (
+                window.shape[0] != self.window_size
+                or window.shape[1] != self.window_size
+            ):
                 continue
+            window = skimage.measure.block_reduce(window, (2, 2), np.max)
             features = self.feature_extraction(window)
             feature_windows.append(features)
             rois.append((x, y, x + self.window_size, y + self.window_size))
-            
+
         results = self.model.predict(feature_windows)
+        # probs = self.model.predict_proba(feature_windows)
+        ### Threshold the probabilities to get the final results
+        # results[probs[:,1] < 0.6] = 0
         ### Get the rois which contain the fracture
         rois = np.array(rois)
         selected_rois = rois[results == 1]
         for roi in selected_rois:
             roi = get_original_coordinates(roi, self.pool_size)
+            ## Add the offset to the roi
+            roi = (roi[0] + self.roi_offset_left[0], roi[1] + self.roi_offset_left[1], roi[2] + self.roi_offset_left[0], roi[3] + self.roi_offset_left[1])
             scaled_roi.append(roi)
         # return self.merge_boxes(scaled_roi)
         return scaled_roi
@@ -194,8 +248,8 @@ class Wrist_Fracture_Detection:
             filename (str): Path to load the model
         """
         return load_model(filename)
-    
-    def pooling(self, img, pool_size=(4,4)):
+
+    def pooling(self, img, pool_size=(4, 4)):
         """Apply pooling to the image
 
         Args:
@@ -204,7 +258,6 @@ class Wrist_Fracture_Detection:
         """
         img = skimage.measure.block_reduce(img, pool_size, np.max)
         return img
-        
 
     def preprocess(self, img):
         """Preprocess the image
@@ -215,7 +268,7 @@ class Wrist_Fracture_Detection:
         Returns:
             np.array: Preprocessed image
         """
-        
+
         outputbitdepth = 8
         intensity_crop = 1
         dilate_num = 4
@@ -279,8 +332,14 @@ class Wrist_Fracture_Detection:
         Returns:
             np.array: Features
         """
-        return self.feature_extractor(img).ravel()
-    
+        if type(self.feature_extractor) is not list:
+            return self.feature_extractor(img).ravel()
+        else:
+            features = []
+            for extractor in self.feature_extractor:
+                features.append(extractor(img).ravel())
+            return np.concatenate(features)
+
     def merge_boxes(self, boxes, iou_threshold=0.2):
         """
         Merge overlapping bounding boxes.
@@ -335,7 +394,8 @@ class Wrist_Fracture_Detection:
                 2,
             )
         cv2.imshow("Image", img)
-        if cv2.waitKey(0) & 0xFF == ord("q"):     
+        if cv2.waitKey(0) & 0xFF == ord("q"):
             cv2.destroyAllWindows()
             import sys
+
             sys.exit(0)

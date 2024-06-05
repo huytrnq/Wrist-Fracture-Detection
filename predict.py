@@ -9,10 +9,10 @@ from utils.dataset import load_yolo_labels
 object_detection_metrics = ObjectDetectionMetrics(iou_threshold=0.5) ## ignore confidence score
 
 # Load the trained classifier
-classifier_path = './haar_training/opencv-cascade-tracker/data/cascade.xml'
+classifier_path = 'haar_training/classifier/cascade.xml'
 haar_cascade = cv2.CascadeClassifier(classifier_path)
 
-test_folder = 'MLDataset/crop_data/images/test'
+test_folder = 'MLDataset/crop_data_enhanced/images/test'
 save_folder = 'results'
 
 os.makedirs(save_folder, exist_ok=True)

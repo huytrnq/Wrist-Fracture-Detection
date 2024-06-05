@@ -2,6 +2,7 @@ import numpy as np
 import cv2
 from scipy.ndimage import convolve, uniform_filter
 import torch
+from torchvision import transforms
 import torchvision.models as models
 from skimage.feature import hog
 from skimage.feature import local_binary_pattern
@@ -110,3 +111,43 @@ class LBPDescriptor:
         
     def __call__(self, image):
         return self.lbp.compute(image)
+    
+    
+class CannyDescriptor:
+    def __init__(self, threshold1=150, threshold2=200):
+        self.threshold1 = threshold1
+        self.threshold2 = threshold2
+    
+    def __call__(self, image):
+        if image.ndim == 3:
+            gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        else:
+            gray_image = image
+        edges = cv2.Canny(gray_image, self.threshold1, self.threshold2)
+        feature, hog_image = hog(edges, orientations=9, pixels_per_cell=(8, 8),
+                        cells_per_block=(2, 2), visualize=True)
+        return feature.flatten()
+    
+
+class AlexNetDescriptor:
+    def __init__(self, selected_features=[0,1,2,4,5,7,15,19,21,26,31,36,37,38,40,44,51]):
+        self.alexnet = models.alexnet(pretrained=True).features[0]
+        self.alexnet.eval()
+        self.transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
+        self.selected_features = selected_features
+        
+    def __call__(self, image):
+        if image.ndim == 2:
+            image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = self.transform(image)
+        image = image.unsqueeze(0)
+        with torch.no_grad():
+            features = self.alexnet(image)
+        features = features.squeeze(0).detach().numpy()
+        features = features[self.selected_features, :, :]
+        features = features.mean(axis=0)
+        return features

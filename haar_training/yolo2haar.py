@@ -26,6 +26,15 @@ def convert_annotations(txt_path, image_path, output_path):
         w = int(w)
         h = int(h)
         
+        if x < 0:
+            x = 0
+        if y < 0:
+            y = 0
+        if x + w > width:
+            w = width - x
+        if y + h > height:
+            h = height - y
+        
         annotation += f" {x} {y} {w} {h}"
 
     with open(output_path, 'a') as file:
@@ -35,8 +44,8 @@ def convert_annotations(txt_path, image_path, output_path):
 if __name__ == '__main__':
     mode = 'train'
     # dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/'
-    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/grid_data/images/train/'
-    label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/grid_data/labels/train/'
+    dataset_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/crop_data/images/train/'
+    label_root = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/MLDataset/crop_data/labels/train/'
     class_name = 'fracture'
     
     total_count = 0
@@ -50,5 +59,5 @@ if __name__ == '__main__':
         print(f'Converted {count_per_file} annotations from {image_path}')
     print(f'Total annotations: {total_count}')
     
-# 436
+# 524
 # 1819

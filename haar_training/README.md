@@ -2,7 +2,7 @@
 
 ## Create training set
 ```bash
-opencv_createsamples -info annotations.txt -num 1819 -w 16 -h 16 -vec positives.vec
+opencv_createsamples -info annotations.txt -num 524 -w 16 -h 16 -vec positives.vec
 opencv_createsamples -info annotations.txt -num 327 -w 20 -h 20 -vec positives.vec -maxxangle 0.1 -maxyangle 0.1 --maxzangle 0.1 
 ```
 

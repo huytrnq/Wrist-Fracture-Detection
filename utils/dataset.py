@@ -32,6 +32,43 @@ def resize_keep_aspect_ratio(image, target_size):
         new_w = int(w * new_h / h)
     return cv2.resize(image, (new_w, new_h))
 
+def resize_image_and_bboxes(image, bounding_boxes, new_shape):
+    """
+    Resize the image and scale the bounding boxes accordingly.
+
+    Parameters:
+    - image: np.array, the original image.
+    - bounding_boxes: list of tuples, each tuple contains (x_min, y_min, x_max, y_max).
+    - new_width: int, the desired width of the resized image.
+    - new_height: int, the desired height of the resized image.
+
+    Returns:
+    - resized_image: np.array, the resized image.
+    - scaled_bounding_boxes: list of tuples, the scaled bounding box coordinates.
+    """
+    # Original size
+    original_height, original_width = image.shape[:2]
+    new_height, new_width = new_shape
+
+    # Resize the image
+    resized_image = cv2.resize(image, (new_width, new_height))
+
+    # Calculate scaling factors
+    scale_x = new_width / original_width
+    scale_y = new_height / original_height
+
+    # Scale bounding boxes
+    scaled_bounding_boxes = []
+    for box in bounding_boxes:
+        c, x_min, y_min, x_max, y_max = box
+        x_min = int(x_min * scale_x)
+        y_min = int(y_min * scale_y)
+        x_max = int(x_max * scale_x)
+        y_max = int(y_max * scale_y)
+        scaled_bounding_boxes.append((c, x_min, y_min, x_max, y_max))
+
+    return resized_image, scaled_bounding_boxes
+
 
 def load_yolo_labels(path, shape, classes=None, normalize=False):
     """Load the YOLO labels from the file
