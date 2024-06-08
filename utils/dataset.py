@@ -89,7 +89,7 @@ def load_yolo_labels(path, shape, classes=None, normalize=False):
     for line in lines:
         label = line.strip().split()
         c, x, y, w, h = label
-        c = int(c)
+        c = int(float(c))
         x = float(x) * width
         y = float(y) * height
         w = float(w) * width
