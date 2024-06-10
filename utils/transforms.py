@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 import numpy as np
 import cv2
 import skimage
@@ -11,7 +9,6 @@ from skimage.exposure import rescale_intensity
 
 from utils.intensity_transforms import histogram_matching
 
->>>>>>> huytrq
 class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
@@ -19,9 +16,6 @@ class Compose:
     def __call__(self, image):
         for transform in self.transforms:
             image = transform(image)
-<<<<<<< HEAD
-        return image
-=======
         return image
 
 class Padding:
@@ -200,4 +194,3 @@ class ROI_Isolation:
             final_image =  cv2.bitwise_and(image, image, mask=closed_mask)
 
         return final_image
->>>>>>> huytrq
