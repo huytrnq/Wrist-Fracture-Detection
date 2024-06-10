@@ -15,8 +15,8 @@ Iterations over each image have been performed using a sliding window approach, 
 ![image](./images/FeaturesExtraction.png)
 
 ## Model Training
-### Training Pipeline
-### Moddel Selection
+
+### Model Selection
 - LightGBM: with learning rate of 0.05 and 150 estimators
 - SVM: with C = 100, gamma = 0.1, and kernel = 'rbf'
 ### Feature Selection
