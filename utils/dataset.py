@@ -4,13 +4,50 @@ from glob import glob
 
 import os
 import cv2
-import skimage
+import numpy as np
 from skimage.io import imread
 
 from pathlib import Path
 from glob import glob
 
 IMG_FORMATS = "bmp", "dng", "jpeg", "jpg", "mpo", "png", "tif", "tiff", "webp", "pfm" 
+
+
+def sliding_window(image, stepSize, windowSize):
+    """Slide a window across the image
+    
+    Args:
+    image (numpy.ndarray): The input image.
+    stepSize (int): The number of pixels to skip each time the window moves.
+    windowSize (int): The width/height of the window (assuming a square window).
+    
+    Yields:
+    tuple: Contains the x and y coordinates of the top-left corner of the window,
+        and the window itself as a numpy array.
+    """
+    # Calculate the dimensions of the image
+    height, width = image.shape[:2]
+
+    # Iterate over the vertical axis
+    for y in range(0, height - windowSize + 1, stepSize):
+        for x in range(0, width - windowSize + 1, stepSize):
+            # Yield the current window
+            yield (x, y, image[y:y + windowSize, x:x + windowSize])
+
+    # Check if we need to include the last row and column windows
+    if (height - windowSize) % stepSize != 0:
+        # Process the last row
+        for x in range(0, width - windowSize + 1, stepSize):
+            yield (x, height - windowSize, image[height - windowSize:height, x:x + windowSize])
+
+    if (width - windowSize) % stepSize != 0:
+        # Process the last column
+        for y in range(0, height - windowSize + 1, stepSize):
+            yield (width - windowSize, y, image[y:y + windowSize, width - windowSize:width])
+
+    # Include the bottom-right corner window if both dimensions are uneven
+    if (height - windowSize) % stepSize != 0 and (width - windowSize) % stepSize != 0:
+        yield (width - windowSize, height - windowSize, image[height - windowSize:height, width - windowSize:width])
 
 def resize_keep_aspect_ratio(image, target_size):
     """Resize the image while keeping the aspect ratio
@@ -135,15 +172,17 @@ def adjust_labels_for_pooling(labels, original_shape, pool_size):
     return adjusted_labels
 
 class DataLoader:
-    def __init__(self, path, img_size, transforms=None) -> None:
+    def __init__(self, path, transforms=None, heatmap=None) -> None:
         """Initializes the Preprocessor class
 
         Args:
             path (str): path to the images
-            img_size (tuple): working size of the images
+            heatmap (str): path to the heatmap
+            transforms (transforms): transforms to apply to the images
         """
         
         self.transforms = transforms
+        self.heatmap = np.load(heatmap)
         
         if isinstance(path, str) and Path(path).suffix == '.txt':
             path = Path(path).read_text().splitlines()
@@ -175,17 +214,46 @@ class DataLoader:
         if self.count == self.file_count:
             return StopIteration
         path = self.files[self.count]
-        img0 = imread(path, cv2.IMREAD_GRAYSCALE)
+        img0 = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+        
         self.count += 1
         assert img0 is not None, f"File not found {path}"
         
+        img, offset = get_roi_from_heatmap(img0, self.heatmap)
+        
         if self.transforms:
-            img = self.transforms(img0)
-        else:
-            img = img0
+            img = self.transforms(img)
     
-        return path, img0, img
+        return path, img0, img, offset
     
+
+def get_roi_from_heatmap(image, heatmap):
+    """Get region of interest from heatmap
+
+    Args:
+        image array): Image
+
+    Returns:
+        roi: np.array
+    """
+    coords = np.column_stack(np.where(heatmap > 0))
+    top_left = coords.min(axis=0)
+    bottom_right = coords.max(axis=0)
+    ## Scale the roi coordinates
+    ## order h, w
+    scaled_roi_coords = [
+        top_left[0] / heatmap.shape[0] * image.shape[0],
+        top_left[1] / heatmap.shape[1] * image.shape[1],
+        bottom_right[0] / heatmap.shape[0] * image.shape[0],
+        bottom_right[1] / heatmap.shape[1] * image.shape[1],
+    ]
+    roi_image = image[
+        int(scaled_roi_coords[0]) : int(scaled_roi_coords[2]),
+        int(scaled_roi_coords[1]) : int(scaled_roi_coords[3]),
+    ]
+    ## Set the offset and change to w, h
+    roi_offset_left = (int(scaled_roi_coords[1]), int(scaled_roi_coords[0]))
+    return roi_image, roi_offset_left
 
 if __name__ == '__main__':
 

@@ -9,8 +9,9 @@ from skimage.filters import unsharp_mask
 from skimage.filters import threshold_otsu
 from skimage.morphology import disk, closing, dilation
 
-from utils.preprocess import sliding_window
+from utils.dataset import sliding_window
 from utils.intensity_transforms import histogram_matching
+from utils.bboxes import iou, merge_two_boxes, get_original_coordinates
 
 
 def export_model(model, filename):
@@ -40,107 +41,33 @@ def load_model(filename):
     return model
 
 
-# Function to get original coordinates from pooled coordinates
-def get_original_coordinates(pooled_coords, pooling_factor):
-    """
-    Convert coordinates from pooled image to original image coordinates.
-
-    Args:
-    pooled_coords (tuple): Coordinates in the pooled image (row1, col1, row2, col2).
-    pooling_factor (tuple): Pooling factor (row_factor, col_factor).
-
-    Returns:
-    tuple: Coordinates in the original image.
-    """
-    row1, col1, row2, col2 = pooled_coords
-    row_factor, col_factor = pooling_factor
-    return row1 * row_factor, col1 * col_factor, row2 * row_factor, col2 * col_factor
-
-
-def iou(box1, box2):
-    x1, y1, x2, y2 = box1
-    x1b, y1b, x2b, y2b = box2
-
-    # Calculate intersection
-    inter_x1 = max(x1, x1b)
-    inter_y1 = max(y1, y1b)
-    inter_x2 = min(x2, x2b)
-    inter_y2 = min(y2, y2b)
-    inter_area = max(0, inter_x2 - inter_x1 + 1) * max(0, inter_y2 - inter_y1 + 1)
-
-    # Calculate union
-    box1_area = (x2 - x1 + 1) * (y2 - y1 + 1)
-    box2_area = (x2b - x1b + 1) * (y2b - y1b + 1)
-    union_area = box1_area + box2_area - inter_area
-
-    # Calculate IoU
-    return inter_area / union_area
-
-
-def merge_two_boxes(box1, box2):
-    x1 = min(box1[0], box2[0])
-    y1 = min(box1[1], box2[1])
-    x2 = max(box1[2], box2[2])
-    y2 = max(box1[3], box2[3])
-    return [x1, y1, x2, y2]
-
-
-class Wrist_Fracture_Detection:
+class WristFractureDetection:
     def __init__(
         self,
-        model=None,
+        model_path=None,
         step_size=64,
         window_size=64,
         pool_size=(4, 4),
         feature_extractor=None,
-        heatmap="./heatmap.npy",
+        scaler='./models/weights/scaler.pkl'
     ):
         """Wrist Fracture Detection
 
         Args:
-            model (str, optional): Path to exported model. Defaults to None.
+            model_path (str, optional): Path to exported model. Defaults to None.
             step_size (int, optional): Stride step. Defaults to 128.
             window_size (int, optional): Sliding window size. Defaults to 256.
             pool_size (tuple, optional): Pooling window size. Defaults to (4, 4).
             feature_extractor (function, optional): Feature extractor. Defaults to None.
-            heatmap (str, optional): Path to heatmap. Defaults to './heatmap.npy'.
+            scaler (str, optional): Path to scaler. Defaults to './scaler.pkl'.
         """
-        self.model = self.load(model) if model else None
+        self.model = self.load(model_path) if model_path else None
         self.step_size = step_size
         self.window_size = window_size
         self.pool_size = pool_size
         self.feature_extractor = feature_extractor
-        self.heatmap = heatmap
-        self.roi_offset_left = (0,0)
+        self.scaler = load(scaler)
 
-    def get_roi_from_heatmap(self, image):
-        """Get region of interest from heatmap
-
-        Args:
-            image array): Image
-
-        Returns:
-            roi: np.array
-        """
-        heatmap = np.load(self.heatmap)
-        coords = np.column_stack(np.where(heatmap > 0))
-        top_left = coords.min(axis=0)
-        bottom_right = coords.max(axis=0)
-        ## Scale the roi coordinates
-        ## order h, w
-        scaled_roi_coords = [
-            top_left[0] / heatmap.shape[0] * image.shape[0],
-            top_left[1] / heatmap.shape[1] * image.shape[1],
-            bottom_right[0] / heatmap.shape[0] * image.shape[0],
-            bottom_right[1] / heatmap.shape[1] * image.shape[1],
-        ]
-        roi_image = image[
-            int(scaled_roi_coords[0]) : int(scaled_roi_coords[2]),
-            int(scaled_roi_coords[1]) : int(scaled_roi_coords[3]),
-        ]
-        ## Set the offset and change to w, h
-        self.roi_offset_left = (int(scaled_roi_coords[1]), int(scaled_roi_coords[0]))
-        return roi_image
 
     def padding(self, image, factor=64, mode="constant", value=0):
         """
@@ -181,16 +108,7 @@ class Wrist_Fracture_Detection:
 
         return padded_image
 
-    def fit(self, X, y):
-        """Fit the model
-
-        Args:
-            X (np.array): Features
-            y (np.array): Labels
-        """
-        self.model.fit(X, y)
-
-    def predict(self, image):
+    def predict(self, image, offset):
         """Predict
 
         Args:
@@ -203,9 +121,6 @@ class Wrist_Fracture_Detection:
         scaled_roi = []
 
         feature_windows = []
-        if self.heatmap:
-            image = self.get_roi_from_heatmap(image)
-        image = self.preprocess(image)
         image = self.padding(image, factor=self.window_size)
         for x, y, window in sliding_window(image, self.step_size, self.window_size):
             if (
@@ -213,33 +128,32 @@ class Wrist_Fracture_Detection:
                 or window.shape[1] != self.window_size
             ):
                 continue
+            zero_percentage = np.mean(window == 0) * 100
+            if zero_percentage > 50:
+                continue
             window = skimage.measure.block_reduce(window, (2, 2), np.max)
+            
             features = self.feature_extraction(window)
+            features = self.scaler.transform(features.reshape(1, -1)).ravel()
             feature_windows.append(features)
             rois.append((x, y, x + self.window_size, y + self.window_size))
 
-        results = self.model.predict(feature_windows)
-        # probs = self.model.predict_proba(feature_windows)
-        ### Threshold the probabilities to get the final results
-        # results[probs[:,1] < 0.6] = 0
+        if len(feature_windows) > 0:
+            results = self.model.predict(feature_windows)
+        else:
+            results = []
+            return results
+        
         ### Get the rois which contain the fracture
         rois = np.array(rois)
         selected_rois = rois[results == 1]
         for roi in selected_rois:
             roi = get_original_coordinates(roi, self.pool_size)
             ## Add the offset to the roi
-            roi = (roi[0] + self.roi_offset_left[0], roi[1] + self.roi_offset_left[1], roi[2] + self.roi_offset_left[0], roi[3] + self.roi_offset_left[1])
+            roi = (roi[0] + offset[0], roi[1] + offset[1], roi[2] + offset[0], roi[3] + offset[1])
             scaled_roi.append(roi)
         # return self.merge_boxes(scaled_roi)
         return scaled_roi
-
-    def save(self, filename):
-        """Save the model
-
-        Args:
-            filename (str): Path to save the model
-        """
-        export_model(self.model, filename)
 
     def load(self, filename):
         """Load the model
@@ -249,79 +163,6 @@ class Wrist_Fracture_Detection:
         """
         return load_model(filename)
 
-    def pooling(self, img, pool_size=(4, 4)):
-        """Apply pooling to the image
-
-        Args:
-            img (array): Image
-            pool_size (tuple, optional): Pooling Window Size. Defaults to 2.
-        """
-        img = skimage.measure.block_reduce(img, pool_size, np.max)
-        return img
-
-    def preprocess(self, img):
-        """Preprocess the image
-
-        Args:
-            img (np.array): Image
-
-        Returns:
-            np.array: Preprocessed image
-        """
-
-        outputbitdepth = 8
-        intensity_crop = 1
-        dilate_num = 4
-        if self.pool_size:
-            img = self.pooling(img, self.pool_size)
-        ### Load mean histogram from the training data
-        mean_hist = np.load("mean_hist.npy")
-        ### Unsharp masking
-        img = (
-            ((unsharp_mask(img, radius=2, amount=1)) * 255)
-            .clip(0, 255)
-            .astype(np.uint8)
-        )
-
-        ## Histogram equalization
-        img = exposure.rescale_intensity(
-            img,
-            in_range=(
-                np.percentile(img, intensity_crop),
-                np.percentile(img, (100 - intensity_crop)),
-            ),
-        )
-        img = exposure.equalize_adapthist(img)
-
-        ## Normalize img
-        img = cv2.normalize(
-            img,
-            dst=None,
-            alpha=0,
-            beta=int((pow(2, outputbitdepth)) - 1),
-            norm_type=cv2.NORM_MINMAX,
-        ).astype(np.uint8)
-
-        ## Apply mean histogram
-        img = histogram_matching(img, mean_hist)
-
-        # Apply Otsu's thresholding
-        thresh = threshold_otsu(img)
-        binary_mask = img > thresh
-
-        # Apply multiple dilations
-        selem = disk(4)
-        dilated_mask = binary_mask
-        for _ in range(dilate_num):
-            dilated_mask = dilation(dilated_mask, selem)
-
-        # Apply closing to the dilated mask
-        closed_mask = closing(dilated_mask, selem)
-
-        # Apply the mask to the original image using a bitwise AND operation
-        img = cv2.bitwise_and(img, img, mask=np.uint8(closed_mask * 255))
-
-        return img
 
     def feature_extraction(self, img):
         """Feature extraction
@@ -377,25 +218,3 @@ class Wrist_Fracture_Detection:
             used[i] = True
 
         return np.array(merged_boxes).astype(int).tolist()
-
-    def visualize_rois(self, img, rois):
-        """Visualize regions of interest
-
-        Args:
-            img (np.array): Image
-            rois (list): List of regions of interest
-        """
-        for x, y in rois:
-            cv2.rectangle(
-                img,
-                (x, y),
-                (x + self.window_size, y + self.window_size),
-                (0, 255, 0),
-                2,
-            )
-        cv2.imshow("Image", img)
-        if cv2.waitKey(0) & 0xFF == ord("q"):
-            cv2.destroyAllWindows()
-            import sys
-
-            sys.exit(0)

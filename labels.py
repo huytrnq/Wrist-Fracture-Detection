@@ -1,47 +1,42 @@
 import os
 
-def filter_and_change_yolo_labels(input_folder, output_folder, class_to_filter, new_class_id=0):
+def filter_yolo_labels(input_dir, output_dir, class_ids_to_filter):
     """
-    Filter YOLO label files by a specific class and change the class ID to a new value.
-    
+    Filters out specific class labels from YOLO format annotation files.
+
     Parameters:
-    - input_folder: Path to the folder containing YOLO label files.
-    - output_folder: Path to the folder where filtered labels will be saved.
-    - class_to_filter: The class ID to filter.
-    - new_class_id: The new class ID to set in the filtered labels (default is 0).
+    - input_dir: Directory containing the original YOLO annotation files.
+    - output_dir: Directory to save the filtered annotation files.
+    - class_ids_to_filter: List of class IDs to filter out.
+
+    Returns:
+    - None
     """
-    # Ensure the output folder exists
-    os.makedirs(output_folder, exist_ok=True)
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    for filename in os.listdir(input_dir):
+        if filename.endswith(".txt"):
+            input_path = os.path.join(input_dir, filename)
+            output_path = os.path.join(output_dir, filename)
+            
+            with open(input_path, 'r') as infile, open(output_path, 'w') as outfile:
+                for line in infile:
+                    parts = line.split()
+                    class_id = int(parts[0])
+                    if class_id in class_ids_to_filter:
+                        parts[0] = '0'  # Replace the class ID with 0
+                        outfile.write(' '.join(parts) + '\n')
+
+if __name__ == "__main__":
+    # Directory containing the original YOLO annotation files
+    input_dir = '/Users/huytrq/Downloads/fracture'
     
-    # Loop through all files in the input folder
-    for filename in os.listdir(input_folder):
-        input_filepath = os.path.join(input_folder, filename)
-        
-        # Check if it's a file (not a directory)
-        if os.path.isfile(input_filepath):
-            with open(input_filepath, 'r') as file:
-                lines = file.readlines()
-            
-            # Filter lines by the specified class and change the class ID
-            filtered_lines = []
-            for line in lines:
-                parts = line.split()
-                if int(float(parts[0])) == class_to_filter:
-                    parts[0] = str(new_class_id)
-                    parts.insert(1, "0.99")  # Set the confidence score to 0
-                    filtered_lines.append(" ".join(parts) + "\n")
-            # Write filtered lines to the output file
-            output_filepath = os.path.join(output_folder, filename)
-            with open(output_filepath, 'w') as file:
-                file.writelines(filtered_lines)
-            
-            # Print the processed file information
-            print(f"Processed {input_filepath} -> {output_filepath}")
-
-# Example usage:
-input_folder = "./results/predictions/"
-output_folder = "./results/filtered_labels/"
-class_to_filter = 0  # Change this to the class you want to filter
-new_class_id = 0  # Change this to the new class ID you want to set
-
-filter_and_change_yolo_labels(input_folder, output_folder, class_to_filter, new_class_id)
+    # Directory to save the filtered annotation files
+    output_dir = '/Users/huytrq/Downloads/fracture1'
+    
+    # List of class IDs to filter out
+    class_ids_to_filter = [3]  # Replace with the class IDs you want to filter out
+    
+    filter_yolo_labels(input_dir, output_dir, class_ids_to_filter)

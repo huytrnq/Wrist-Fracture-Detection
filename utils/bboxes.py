@@ -1,6 +1,29 @@
 import cv2
 import numpy as np
 
+# Function to get original coordinates from pooled coordinates
+def get_original_coordinates(pooled_coords, pooling_factor):
+    """
+    Convert coordinates from pooled image to original image coordinates.
+
+    Args:
+    pooled_coords (tuple): Coordinates in the pooled image (row1, col1, row2, col2).
+    pooling_factor (tuple): Pooling factor (row_factor, col_factor).
+
+    Returns:
+    tuple: Coordinates in the original image.
+    """
+    row1, col1, row2, col2 = pooled_coords
+    row_factor, col_factor = pooling_factor
+    return row1 * row_factor, col1 * col_factor, row2 * row_factor, col2 * col_factor
+
+def merge_two_boxes(box1, box2):
+    x1 = min(box1[0], box2[0])
+    y1 = min(box1[1], box2[1])
+    x2 = max(box1[2], box2[2])
+    y2 = max(box1[3], box2[3])
+    return [x1, y1, x2, y2]
+
 def iou(box1, box2):
     """Calculate the Intersection over Union (IoU) of two bounding boxes.
 
