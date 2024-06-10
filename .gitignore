@@ -6,6 +6,16 @@ __pycache__/
 # C extensions
 *.so
 
+<<<<<<< HEAD
+=======
+#data
+dataset/
+MLDataset/
+# models/weights/
+haar_training/
+results/test
+
+>>>>>>> huytrq
 # Distribution / packaging
 .Python
 build/
