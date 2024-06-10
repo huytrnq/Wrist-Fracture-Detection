@@ -34,8 +34,8 @@ def args():
     parser.add_argument("--pool_kernel", type=tuple, default=(4, 4))
     parser.add_argument("--mean_hist", type=str, default="./npys/mean_hist.npy")
     parser.add_argument("--heatmap", type=str, default="./npys/heatmap.npy")
-    parser.add_argument("--model_path", type=str, default="models/weights/fast_region_proposal.pkl")
-    parser.add_argument("--scaler", type=str, default="models/weights/scaler.pkl")
+    parser.add_argument("--model_path", type=str, default="models/weights/fast_region_proposal_svm.pkl")
+    parser.add_argument("--scaler", type=str, default="models/weights/scaler_svm.pkl")
     parser.add_argument("--labels_folder", type=str, default=None)
     return parser.parse_args()
 
