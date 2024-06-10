@@ -1,8 +1,5 @@
 from typing import Any
-<<<<<<< HEAD
-=======
 import numpy as np
->>>>>>> huytrq
 import cv2
 
 class IntensityTransformation:
@@ -78,8 +75,6 @@ class IntensityTransformation:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         img = cv2.equalizeHist(img)
         return img
-<<<<<<< HEAD
-=======
     
     def equalize_histogram_16bit_manual(self,img):
         
@@ -138,7 +133,6 @@ def histogram_matching(source_image, reference_histogram):
     matched_image = cv2.LUT(source_image, lookup_table)
     return matched_image
     
->>>>>>> huytrq
 
 if __name__ == '__main__':
     img_path = '/Users/huytrq/Downloads/Compress/Extracted/folder_structure/supervisely/wrist/img/0031_1007172623_02_WRI-R1_M009.png'
