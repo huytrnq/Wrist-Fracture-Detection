@@ -26,7 +26,7 @@ Iterations over each image have been performed using a sliding window approach, 
 - Hard negative mining was performed using the most accurate model to identify misclassified samples from the validation set and add them to the training set, followed by retraining the model. By focusing on hard negatives, the model learns from its mistakes, potentially improving performance on difficult cases.
 
 
-## Useage
+## Usage
 ### Install requirements
 ```bash
 pip install -r requirements.txt
