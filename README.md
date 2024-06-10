@@ -3,7 +3,15 @@ This repository contains the code for the project "Wrist Fracture Detection" whi
 
 This code is the first stage of the Wrist Fracture Detection pipeline, which aims to generate propose regions for further steps.
 
-## Image Preprocessing Pipeline
+## Table of Contents
+- [Image Preprocessing Pipeline](#image-preprocessing-pipeline)
+- [Feature Extraction](#feature-extraction)
+- [Model Training](#model-training)
+- [Usage](#usage)
+- [Results](#results)
+- [Reference](#reference)
+
+## Image Preprocessing Pipeline 
 For this approach, two critical stages are essential: 
 -  Image Preprocessing to enhance image quality, highlight key features, and isolate regions of interest, ensuring successful bone segmentation. 
 -  Feature Extraction to identify and capture meaningful patterns and structures from the processed images using various descriptors, which are vital for accurate and efficient subsequent analysis.
