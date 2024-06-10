@@ -1,7 +1,7 @@
 from joblib import load
 from joblib import dump
 
-import cv2
+import os
 import numpy as np
 import skimage
 from skimage import exposure
@@ -41,15 +41,18 @@ def load_model(filename):
     return model
 
 
+DEFAULT_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'weights/fast_region_proposal.pkl')
+DEFAULT_SCALER_PATH = os.path.join(os.path.dirname(__file__), 'weights/scaler.pkl')
+
 class WristFractureDetection:
     def __init__(
         self,
-        model_path=None,
+        model_path=DEFAULT_MODEL_PATH,
         step_size=64,
         window_size=64,
         pool_size=(4, 4),
         feature_extractor=None,
-        scaler='./models/weights/scaler.pkl'
+        scaler=DEFAULT_SCALER_PATH
     ):
         """Wrist Fracture Detection
 

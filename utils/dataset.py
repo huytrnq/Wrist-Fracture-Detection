@@ -212,7 +212,7 @@ class DataLoader:
     
     def __next__(self):
         if self.count == self.file_count:
-            return StopIteration
+            raise StopIteration
         path = self.files[self.count]
         img0 = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
         

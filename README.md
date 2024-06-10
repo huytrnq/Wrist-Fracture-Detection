@@ -1,91 +1,80 @@
 # Wrist-Fracture-Detection
 This repository contains the code for the project "Wrist Fracture Detection" which is a part of the course "Medical Image Analysis" at the University of Cassion.
 
+This code is the first stage of the Wrist Fracture Detection pipeline, which aims to generate propose regions for further steps.
+
 ## Image Preprocessing Pipeline
+For this approach, two critical stages are essential: 
+-  Image Preprocessing to enhance image quality, highlight key features, and isolate regions of interest, ensuring successful bone segmentation. 
+-  Feature Extraction to identify and capture meaningful patterns and structures from the processed images using various descriptors, which are vital for accurate and efficient subsequent analysis.
 ![image](./images/Image%20Processing%20Pipeline.png)
 
 ## Feature Extraction 
+Iterations over each image have been performed using a sliding window approach, extracting patches (windows) of 64 pixels in size, with a step size of 32 pixels.
+
+![image](./images/FeaturesExtraction.png)
 
 ## Model Training
-### Moddel Selection
-- LightGBM
 ### Training Pipeline
-- HardMining
+### Moddel Selection
+- LightGBM: with learning rate of 0.05 and 150 estimators
+- SVM: with C = 100, gamma = 0.1, and kernel = 'rbf'
+### Feature Selection
+-  Minimum Redundancy Maximum Relevance (mRMR) [7] method to select the most relevant features from the dataset, improving model performance, and reducing complexity and the risk of overfitting
+- The best results achieved with the 600 features
+### HardMining
+- Hard negative mining was performed using the most accurate model to identify misclassified samples from the validation set and add them to the training set, followed by retraining the model. By focusing on hard negatives, the model learns from its mistakes, potentially improving performance on difficult cases.
+
+
+## Useage
+### Install requirements
+```bash
+pip install -r requirements.txt
+```
+### Inference
+Recommend to use the default parameters to infer the images. 
+Enable show to visualize the images with the bounding box. 
+Provide labels_folder to compare the results with the ground truth.
+```bash
+python infer.py
+```
+- --infer_path: the path to the folder containing the images to be inferenced
+- --model_path: the path to the model weights
+- --save_path: the path to the folder to save the images
+- --show: whether to show the image with the bounding box
+- --window_size: the size of the window to extract the patch
+- --step_size: the step size of sliding window
+- --pool_kernel: the kernel size of max pooling
+- --mean_hist: the path to the mean histogram of the training dataset
+- --heatmap: the path to the probability map of the heatmap
+- --model_path: the path to the model weights
+- --scaler: the path to the scaler
+- --labels_folder: the path to the folder containing the labels
+
+
 
 ## Results
-### 1. Lightbgm
+### Comparison between different models and features
+| Model      | Features                             | Class        | Precision | Sensitivity | Specificity | F1 Score |
+|------------|--------------------------------------|--------------|-----------|-------------|-------------|----------|
+| LightGBM   | Hog                                  | Non-Fracture | 0.94      | 0.73        | 0.78        | 0.82     |
+|            |                                      | Fracture     | 0.40      | 0.78        | 0.73        | 0.53     |
+|            | Hog + Gabor                          | Non-Fracture | 0.93      | 0.75        | 0.78        | 0.83     |
+|            |                                      | Fracture     | 0.40      | 0.75        | 0.75        | 0.52     |
+|            | Hog + Gabor + HogCanny               | Non-Fracture | 0.94      | 0.75        | 0.78        | 0.83     |
+|            |                                      | Fracture     | 0.42      | 0.78        | 0.75        | 0.54     |
+|            | Hog + Gabor + HogCanny + HM          | Non-Fracture | 0.94      | 0.75        | 0.78        | 0.84     |
+|            |                                      | Fracture     | 0.42      | **0.79**    | 0.76        | 0.55     |
+| SVM        | Hog + Gabor + HogCanny               | Non-Fracture | 0.93      | 0.80        | 0.78        | 0.86     |
+|            |                                      | Fracture     | 0.46      | 0.75        | 0.75        | 0.57     |
+|            | Hog + Gabor + HogCanny + HM          | Non-Fracture | 0.93      | 0.79        | 0.78        | 0.86     |
+|            |                                      | Fracture     | 0.45      | 0.75        | 0.76        | 0.57     |
+|            | Hog + Gabor + HogCanny + mRMR + HM   | Non-Fracture | **0.94**  | **0.80**    | 0.78        | **0.86** |
+|            |                                      | Fracture     | **0.47**  | 0.76        | 0.76        | **0.58** |
 
-#### Hog - Results with Hog Feature Extraction
+### AUC-ROC Curve
+![image](./images/AUC.png)
 
-    |           | Precision | Recall | F1-score | Support |
-    |-----------|-----------|--------|----------|---------|
-    | Class 0   | 0.94      | 0.73   | 0.82     | 1996    |
-    | Class 1   | 0.40      | 0.78   | 0.53     | 453     |
-    |           |           |        |          |         |
-    | Accuracy  |           |        | 0.74     | 2449    |
-    | Macro avg | 0.67      | 0.75   | 0.67     | 2449    |
-    | Weighted avg | 0.84  | 0.74   | 0.77     | 2449    |
+# Reference
+[1] https://github.com/smazzanti/mrmr
 
-    Confusion Matrix:
-    |      | Predicted 0 | Predicted 1 |
-    |------|-------------|-------------|
-    | True 0 | 1461        | 535         |
-    | True 1 | 101         | 352         |
-
-    F1-score: 0.7665189148349725
-
-#### Hog + Alexnet - Results with Hog and Alexnet Feature Extraction
-
-    |           | Precision | Recall | F1-score | Support |
-    |-----------|-----------|--------|----------|---------|
-    | Class 0   | 0.93      | 0.75   | 0.83     | 1996    |
-    | Class 1   | 0.40      | 0.75   | 0.52     | 453     |
-    |           |           |        |          |         |
-    | Accuracy  |           |        | 0.75     | 2449    |
-    | Macro avg | 0.67      | 0.75   | 0.68     | 2449    |
-    | Weighted avg | 0.83  | 0.75   | 0.77     | 2449    |
-
-    Confusion Matrix:
-    |      | Predicted 0 | Predicted 1 |
-    |------|-------------|-------------|
-    | True 0 | 1488        | 508         |
-    | True 1 | 111         | 342         |
-
-    F1-score: 0.7717927657310995
-
-#### Hog + Alexnet + Hog-Canny - Results with Hog, Alexnet and Canny Feature Extraction
-
-    |           | Precision | Recall | F1-score | Support |
-    |-----------|-----------|--------|----------|---------|
-    | Class 0   | 0.94      | 0.75   | 0.83     | 1996    |
-    | Class 1   | 0.42      | 0.78   | 0.54     | 453     |
-    |           |           |        |          |         |
-    | Accuracy  |           |        | 0.76     | 2449    |
-    | Macro avg | 0.68      | 0.76   | 0.69     | 2449    |
-    | Weighted avg | 0.84  | 0.76   | 0.78     | 2449    |
-
-    Confusion Matrix:
-    |      | Predicted 0 | Predicted 1 |
-    |------|-------------|-------------|
-    | True 0 | 1500        | 496         |
-    | True 1 | 101         | 352         |
-
-    F1-score: 0.7798484946093364
-
-#### Hog + Alexnet + Hog-Canny - Results with Hog, Alexnet and Canny Feature Extraction + HardMining
-|           | Precision | Recall | F1-score | Support |
-|-----------|-----------|--------|----------|---------|
-| Class 0   | 0.94      | 0.75   | 0.84     | 1996    |
-| Class 1   | 0.42      | 0.79   | 0.55     | 453     |
-|           |           |        |          |         |
-| Accuracy  |           |        | 0.76     | 2449    |
-| Macro avg | 0.68      | 0.77   | 0.69     | 2449    |
-| Weighted avg | 0.84  | 0.76   | 0.78     | 2449    |
-
-Confusion Matrix:
-|      | Predicted 0 | Predicted 1 |
-|------|-------------|-------------|
-| True 0 | 1499        | 497         |
-| True 1 | 94          | 359         |
-
-F1-score: 0.7822761136208711

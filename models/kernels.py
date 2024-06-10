@@ -131,7 +131,7 @@ class CannyDescriptor:
 
 class AlexNetDescriptor:
     def __init__(self, selected_features=[0,1,2,4,5,7,15,19,21,26,31,36,37,38,40,44,51]):
-        self.alexnet = models.alexnet(pretrained=True).features[0]
+        self.alexnet = models.alexnet(weights='AlexNet_Weights.IMAGENET1K_V1').features[0]
         self.alexnet.eval()
         self.transform = transforms.Compose([
             transforms.ToTensor(),
