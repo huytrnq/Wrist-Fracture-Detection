@@ -93,7 +93,7 @@ prediction_folders = ['./gelan_c_c_640_val_evolution_lr01/txt',
                     './yolov9_c_c_640_val_lr001/txt',]
                     # '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/results/predictions_wcf']
                     # './yolov9_e_c_640_val_60epochs_lr001/txt']  # Add more directories as needed
-ground_truth_dir = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/results/groundtruth'  # Directory containing ground truth txt files
+ground_truth_dir = '/Users/huytrq/Workspace/unicas/AIA&ML/Wrist-Fracture-Detection/results/test/groundtruth'  # Directory containing ground truth txt files
 
 ground_truths = {}
 for filename in os.listdir(ground_truth_dir):
@@ -117,7 +117,7 @@ for pred_dir in prediction_folders:
     ap = average_precision_score(y_true, y_scores)
 
     # Plot the precision-recall curve
-    plt.plot(recall, precision, marker='.', label=f'{os.path.basename(pred_dir.split("/")[1])} (AP: {ap:.2f})')
+    plt.plot(recall, precision, marker='.', label=f'{os.path.basename(pred_dir.split("/")[1])} (mAP: {ap:.2f})')
 
 plt.xlabel('Recall')
 plt.ylabel('Precision')

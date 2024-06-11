@@ -26,7 +26,7 @@ def args():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--infer_path", type=str, default="MLDataset/images/test/fracture")
-    parser.add_argument("--export_results", type=bool, default=False)
+    parser.add_argument("--export_results", action="store_true")
     parser.add_argument("--save_path", type=str, default="results")
     parser.add_argument("--show", action="store_true")
     parser.add_argument("--window_size", type=int, default=64)
@@ -100,6 +100,7 @@ if __name__ == "__main__":
         for xyxy in pred_bboxes:
             x1, y1, x2, y2 = xyxy
             cv2.rectangle(img0, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.putText(img0, 'prediction', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         # Draw the labels
         draw_bboxes(img0, labels, (0, 0, 255))
         

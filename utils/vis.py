@@ -24,4 +24,6 @@ def draw_bboxes(image, bboxes, color=(0, 0, 255), type='xyxy', normalize=False):
             raise ValueError('Invalid type')
         x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
         cv2.rectangle(image, (x1, y1), (x2, y2), color, 2)
+        cv2.putText(image, 'ground truth', (x1, y1-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     return image
+
