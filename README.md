@@ -1,7 +1,7 @@
 # Wrist-Fracture-Detection
-This repository contains the code for the project "Wrist Fracture Detection" which is a part of the course "Medical Image Analysis" at the University of Cassion.
+This repository contains the code for the project "Wrist Fracture Detection," which is a part of the course "Medical Image Analysis" at the University of Cassino.
 
-This code is the first stage of the Wrist Fracture Detection pipeline, which aims to generate propose regions for further steps.
+This code is the first stage of the Wrist Fracture Detection pipeline, which aims to generate proposed regions for further steps.
 
 ## Table of Contents
 - [Image Preprocessing Pipeline](#image-preprocessing-pipeline)
@@ -28,8 +28,8 @@ Iterations over each image have been performed using a sliding window approach, 
 - LightGBM: with learning rate of 0.05 and 150 estimators
 - SVM: with C = 100, gamma = 0.1, and kernel = 'rbf'
 ### Feature Selection
--  Minimum Redundancy Maximum Relevance (mRMR) [7] method to select the most relevant features from the dataset, improving model performance, and reducing complexity and the risk of overfitting
-- The best results achieved with the 600 features
+-  Minimum Redundancy and Maximum Relevance (mRMR) [7] method to select the most relevant features from the dataset, improving model performance, and reducing complexity and the risk of overfitting
+- The best results were achieved with the 600 features
 ### HardMining
 - Hard negative mining was performed using the most accurate model to identify misclassified samples from the validation set and add them to the training set, followed by retraining the model. By focusing on hard negatives, the model learns from its mistakes, potentially improving performance on difficult cases.
 
